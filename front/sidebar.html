@@ -1,0 +1,552 @@
+<!-- Steam 窄屏背景图版小组件 -->
+<div id="steam-narrow-widget" class="steam-widget-narrow" data-apiurl="https://api.qhzy.top/steam-widget"
+    data-id="76561198842391755" data-apikey="" data-num="10" data-num2="5">
+
+    <!-- 加载动画 -->
+    <div id="st-narrow-loading" class="steam-loading">
+        <div class="st-loading-content">
+            <i class="fa-solid fa-spinner fa-spin"></i> 正在获取...
+        </div>
+        <div class="st-footer">青荷芷烟 制作</div>
+    </div>
+
+    <!-- 生成后的内容区域 -->
+    <div id="st-narrow-content" class="st-content-wrapper hidden"></div>
+</div>
+
+<style>
+    .steam-widget-narrow {
+        --narrow-bg: #171a21;
+        --narrow-text: #c7d5e0;
+        --narrow-blue: #66c0f4;
+        --narrow-green: #a4d007;
+        --narrow-ingame: #90ba3c;
+        --narrow-offline: #898989;
+
+        font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
+        background: var(--narrow-bg);
+        color: var(--narrow-text);
+        width: 100%;
+        height: 417px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        margin: 20px auto;
+        position: relative;
+        font-size: 13px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .steam-widget-narrow .hidden {
+        display: none !important;
+    }
+
+    /* === 修复 WordPress 样式干扰 === */
+    .steam-widget-narrow a,
+    .steam-widget-narrow a:hover,
+    .steam-widget-narrow a:focus {
+        text-decoration: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        color: inherit !important;
+        position: relative !important;
+    }
+
+    .steam-widget-narrow a::before,
+    .steam-widget-narrow a::after {
+        display: none !important;
+    }
+
+    /* 去除按钮白边 */
+    .steam-widget-narrow button,
+    .steam-widget-narrow .st-tab-btn {
+        outline: none !important;
+        box-shadow: none !important;
+        border-image: none !important;
+    }
+
+    /* === 底部版权文字 === */
+    .steam-widget-narrow .st-footer {
+        text-align: center;
+        font-size: 12px;
+        color: #4a5e73;
+        margin-bottom: 15px;
+        margin-top: auto;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    /* === 加载动画区域 === */
+    .steam-widget-narrow .steam-loading {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        color: var(--narrow-blue);
+        font-size: 13px;
+        padding: 0;
+        text-align: left;
+    }
+
+    .steam-widget-narrow .st-loading-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-align: center;
+        padding: 0 20px;
+        line-height: 1.5;
+    }
+
+    /* === 生成后的内容布局 === */
+    .steam-widget-narrow .st-content-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* === 头部样式 === */
+    .steam-widget-narrow .st-header {
+        display: flex;
+        align-items: center;
+        height: 100px;
+        padding: 0 15px;
+        background: linear-gradient(to bottom, #2a475e, #1b2838);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    .steam-widget-narrow .st-avatar-container {
+        position: relative;
+        margin-right: 12px;
+        display: block;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .steam-widget-narrow .st-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        transition: border-color 0.3s, transform 0.2s;
+    }
+
+    .steam-widget-narrow .st-avatar-container:hover .st-avatar {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px rgba(102, 192, 244, 0.4);
+        animation: steam-widget-narrow-st-avatar-spin 4s linear infinite;
+        animation-delay: 3s;
+    }
+
+    .steam-widget-narrow .st-avatar.online {
+        border-color: var(--narrow-blue);
+    }
+
+    .steam-widget-narrow .st-avatar.away {
+        border-color: var(--narrow-blue);
+        border-style: dashed;
+    }
+
+    .steam-widget-narrow .st-avatar.ingame {
+        border-color: var(--narrow-ingame);
+    }
+
+    .steam-widget-narrow .st-avatar.offline {
+        border-color: var(--narrow-offline);
+    }
+
+    @keyframes steam-widget-narrow-st-avatar-spin {
+        0% {
+            transform: scale(1.05) rotate(0deg);
+        }
+
+        100% {
+            transform: scale(1.05) rotate(360deg);
+        }
+    }
+
+    .steam-widget-narrow .st-user-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .steam-widget-narrow .st-profile-link {
+        display: inline-block;
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .steam-widget-narrow .st-user-name {
+        margin: 0;
+        font-size: 15px;
+        color: #fff;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+
+    .steam-widget-narrow .st-profile-link:hover .st-user-name {
+        text-decoration: underline !important;
+    }
+
+    .steam-widget-narrow .st-status {
+        font-size: 12px;
+        margin-top: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        opacity: 0.9;
+        line-height: 1.4;
+    }
+
+    .steam-widget-narrow .st-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .steam-widget-narrow .st-status.online .st-status-dot,
+    .steam-widget-narrow .st-status.away .st-status-dot {
+        background-color: var(--narrow-blue);
+    }
+
+    .steam-widget-narrow .st-status.ingame .st-status-dot {
+        background-color: var(--narrow-ingame);
+    }
+
+    .steam-widget-narrow .st-status.offline .st-status-dot {
+        background-color: var(--narrow-offline);
+    }
+
+    .steam-widget-narrow .st-playing-now {
+        font-size: 12px;
+        color: var(--narrow-ingame);
+        margin-top: 4px;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* === Tabs === */
+    .steam-widget-narrow .st-tabs {
+        display: flex;
+        background: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+        height: 37px;
+    }
+
+    .steam-widget-narrow .st-tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8f98a0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: 0.3s;
+        border-bottom: 2px solid transparent;
+    }
+
+    .steam-widget-narrow .st-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+
+    .steam-widget-narrow .st-tab-btn.active {
+        color: #fff;
+        border-bottom: 2px solid var(--narrow-blue);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* === 游戏列表 === */
+    .steam-widget-narrow .st-games-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 !important;
+    }
+
+    .steam-widget-narrow .st-games-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .steam-widget-narrow .st-games-list::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .steam-widget-narrow .st-games-list::-webkit-scrollbar-thumb {
+        background: #4a5e73;
+        border-radius: 2px;
+    }
+
+    .steam-widget-narrow .st-games-list-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding-top: 1px;
+    }
+
+    .steam-widget-narrow .st-game-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        position: relative;
+        height: 55px;
+        padding: 0 15px;
+        text-decoration: none;
+        color: #fff;
+        overflow: hidden;
+        isolation: isolate;
+        transition: padding-left 0.2s;
+        background: none;
+        border-radius: 0;
+        text-align: left;
+        flex-shrink: 0;
+    }
+
+    .steam-widget-narrow .st-game-item:hover {
+        padding-left: 20px;
+        background: none;
+    }
+
+    .steam-widget-narrow .st-game-cover-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+        transition: transform 0.3s, filter 0.3s;
+        filter: brightness(0.4) blur(0px);
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .steam-widget-narrow .st-game-item:hover .st-game-cover-bg {
+        transform: scale(1.1);
+        filter: brightness(0.6);
+    }
+
+    .steam-widget-narrow .st-game-item::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.1) 100%);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .steam-widget-narrow .st-game-details {
+        z-index: 1;
+        position: relative;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .steam-widget-narrow .st-game-name {
+        font-size: 13px;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        margin-bottom: 2px;
+        display: block;
+    }
+
+    .steam-widget-narrow .st-game-hours {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+
+    .steam-widget-narrow .st-game-list-placeholder {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #6a7480;
+        font-size: 12px;
+        padding: 0;
+        min-height: 55px;
+    }
+</style>
+
+<script>
+    (function () {
+        const widget = document.getElementById('steam-narrow-widget');
+        const loading = document.getElementById('st-narrow-loading');
+        const content = document.getElementById('st-narrow-content');
+
+        // 从 HTML 标签属性中读取配置
+        let apiUrl = widget.getAttribute('data-apiurl') || "";
+        const steamId = widget.getAttribute('data-id') || "";
+        const apiKey = widget.getAttribute('data-apikey') || "";
+        const rawNum = parseInt(widget.getAttribute('data-num')) || 10;
+        const rawNum2 = parseInt(widget.getAttribute('data-num2')) || 5;
+
+        const num = Math.min(Math.max(rawNum, 1), 100);
+        const num2 = Math.min(Math.max(rawNum2, 1), 20);
+
+        // 如果没有 ID，直接在卡片内显示错误
+        if (!steamId) {
+            widget.innerHTML = `
+                <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#d9534f;padding:20px;">
+                    未配置 Steam ID<br>
+                    <small style="color:#6a7480;margin-top:10px;display:block;">请在HTML标签中添加 data-id 属性</small>
+                </div>`;
+            return;
+        }
+
+        apiUrl += `?id=${steamId}&num=${num}&num2=${num2}`;
+        if (apiKey) {
+            apiUrl += `&apikey=${apiKey}`;
+        }
+
+        const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27460%27 height=%27215%27 viewBox=%270 0 460 215%27%3E%3Crect width=%27460%27 height=%27215%27 fill=%27%23171a21%27/%3E%3C/svg%3E";
+
+        function optimizeSteamImage(url) {
+            if (!url) return '';
+            return url.replace('steamcdn-a.akamaihd.net', 'cdn.cloudflare.steamstatic.com');
+        }
+
+        function generateListHtml(games, type, minItems = 5) {
+            if (!games || games.length === 0) {
+                const message = type === 'recent' ? '近两周无游戏记录' : '无游戏记录';
+                return `<div class="st-game-list-placeholder">${message}</div>`;
+            }
+
+            let listContent = games.map(g => {
+                const optimizedUrl = optimizeSteamImage(g.image);
+                return `
+                <a href="https://store.steampowered.com/app/${g.appid}" target="_blank" class="st-game-item">
+                    <img class="st-game-cover-bg" src="${optimizedUrl}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'" alt="">
+                    <div class="st-game-details">
+                        <div class="st-game-name" title="${g.name}">${g.name}</div>
+                        <div class="st-game-hours">${g.playtime} 小时</div>
+                    </div>
+                </a>
+                `;
+            }).join('');
+
+            if (games.length < minItems) {
+                listContent += `<div class="st-game-list-placeholder">没有更多游戏了</div>`;
+            }
+
+            return listContent;
+        }
+
+        async function fetchSteamData() {
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                renderWidget(data);
+
+                // 加载完成，显示内容
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+
+            } catch (e) {
+                console.error("Failed to fetch Steam data:", e);
+                let msg = "获取失败，请检查 ID 是否正确";
+                if (apiKey) {
+                    msg = "获取失败，请检查 ID 和 API key 是否正确";
+                }
+
+                widget.innerHTML = `
+                    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#d9534f;padding:20px;">
+                        ${msg}，并检查后端服务是否正常运行
+                    </div>
+                `;
+            }
+        }
+
+        function renderWidget(data) {
+            const u = data.user;
+            let statusClass = 'offline';
+            let statusText = '离线';
+            if (u.gameName) { statusClass = 'ingame'; statusText = '游戏中'; }
+            else if (u.status === 3 || u.status === 4) { statusClass = 'away'; statusText = '离开'; }
+            else if (u.status >= 1) { statusClass = 'online'; statusText = '在线'; }
+
+            content.innerHTML = `
+            <div class="st-header">
+                <a href="${u.profileUrl}" target="_blank" class="st-avatar-container">
+                    <img src="${u.avatar}" class="st-avatar ${statusClass}" alt="Avatar">
+                </a>
+                <div class="st-user-info">
+                    <a href="${u.profileUrl}" target="_blank" class="st-profile-link"><div class="st-user-name">${u.name}</div></a>
+                    <div class="st-status ${statusClass}"><div class="st-status-dot"></div><span>${statusText}</span></div>
+                    ${u.gameName ? `<div class="st-playing-now">正在游玩: <br>${u.gameName}</div>` : ''}
+                </div>
+            </div>
+            <div class="st-tabs">
+                <button class="st-tab-btn active" onclick="switchSteamTabNarrow(this, 'top')">总时长排行</button>
+                <button class="st-tab-btn" onclick="switchSteamTabNarrow(this, 'recent')">近两周游玩</button>
+            </div>
+            <div class="st-games-list" id="st-narrow-list-top">
+                <div class="st-games-list-inner">
+                    ${generateListHtml(data.topGames, 'top')}
+                </div>
+            </div>
+            <div class="st-games-list hidden" id="st-narrow-list-recent">
+                <div class="st-games-list-inner">
+                    ${generateListHtml(data.recentGames, 'recent')}
+                </div>
+            </div>
+            `;
+        }
+
+        window.switchSteamTabNarrow = function (btn, type) {
+            const currentWidget = btn.closest('.steam-widget-narrow');
+            if (!currentWidget) return;
+            const topList = currentWidget.querySelector('#st-narrow-list-top');
+            const recentList = currentWidget.querySelector('#st-narrow-list-recent');
+            const buttons = currentWidget.querySelectorAll('.st-tab-btn');
+
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (type === 'top') {
+                topList.classList.remove('hidden');
+                recentList.classList.add('hidden');
+            } else {
+                topList.classList.add('hidden');
+                recentList.classList.remove('hidden');
+            }
+        }
+
+        fetchSteamData();
+    })();
+</script>
+<!-- Steam 窄屏背景图版小组件结束 -->

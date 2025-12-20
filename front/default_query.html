@@ -1,0 +1,784 @@
+<!-- Steam 小组件 (带输入配置) -->
+<div id="steam-card-widget" class="steam-widget">
+    <!-- 配置表单区域 -->
+    <div id="st-config-form" class="st-config-container">
+        <div class="st-config-wrapper">
+            <div class="st-config-title">Steam 状态组件生成器</div>
+
+            <label class="st-label">Steam ID (17位纯数字)<span class="st-required">*</span></label>
+            <div class="st-input-group">
+                <input type="text" id="st-input-id" class="st-input" value="76561198842391755"
+                    oninput="toggleClearBtn(this, 'st-clear-btn-id')">
+                <button id="st-clear-btn-id" class="st-clear-btn hidden"
+                    onclick="clearInput('st-input-id', 'st-clear-btn-id')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <label class="st-label">Steam API Key (32位数字和字母)</label>
+            <div class="st-input-group">
+                <input type="text" id="st-input-api" class="st-input" placeholder="默认为空，若有需要请在此填入" value=""
+                    oninput="toggleClearBtn(this, 'st-clear-btn-api')">
+                <button id="st-clear-btn-api" class="st-clear-btn hidden"
+                    onclick="clearInput('st-input-api', 'st-clear-btn-api')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="st-row">
+                <div class="st-col">
+                    <label class="st-label">总游戏数量 (1-100)<span class="st-required">*</span></label>
+                    <input type="number" id="st-input-num" class="st-input" value="10" min="1" max="100">
+                </div>
+                <div class="st-col">
+                    <label class="st-label">近两周数量 (1-20)<span class="st-required">*</span></label>
+                    <input type="number" id="st-input-num2" class="st-input" value="5" min="1" max="20">
+                </div>
+            </div>
+
+            <button onclick="loadSteamWidget()" class="st-btn-submit">生成组件</button>
+            <div id="st-error-msg" class="st-error"></div>
+        </div>
+        <div class="st-footer">青荷芷烟 制作</div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="st-loading" class="steam-loading hidden">
+        <div class="st-loading-content">
+            <i class="fa-solid fa-spinner fa-spin"></i> 正在获取 Steam 状态...
+        </div>
+        <div class="st-footer">青荷芷烟 制作</div>
+    </div>
+
+    <!-- 生成后的内容区域 -->
+    <div id="st-content" class="st-content-wrapper hidden"></div>
+</div>
+
+<style>
+    :root {
+        --steam-bg: #1b2838;
+        --steam-card-bg: #171a21;
+        --steam-text: #c7d5e0;
+        --steam-blue: #66c0f4;
+        --steam-green: #a4d007;
+        --steam-ingame: #90ba3c;
+        --steam-offline: #898989;
+    }
+
+    /* === 主容器布局 === */
+    .steam-widget {
+        font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
+        background: radial-gradient(circle at top left, #2a475e, #1b2838);
+        color: var(--steam-text);
+        width: 100%;
+        max-width: 380px;
+        height: 550px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        margin: 20px auto;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    /* === 修复 WordPress 样式干扰 (链接 & 按钮) === */
+    /* 强力去除 WP 主题给链接加的各种下划线、背景、阴影和伪元素动画 */
+    .steam-widget a,
+    .steam-widget a:hover,
+    .steam-widget a:focus,
+    .steam-widget a:visited {
+        text-decoration: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        color: inherit !important;
+        position: relative !important;
+    }
+
+    .steam-widget a::before,
+    .steam-widget a::after {
+        display: none !important;
+        content: none !important;
+        opacity: 0 !important;
+        width: 0 !important;
+    }
+
+    /* 去除按钮白边 */
+    .steam-widget button,
+    .st-btn-submit,
+    .st-config-btn,
+    .st-tab-btn {
+        outline: none !important;
+        box-shadow: none !important;
+        border-image: none !important;
+    }
+
+    /* === 配置表单区域 === */
+    .st-config-container {
+        padding: 0 25px;
+        box-sizing: border-box;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .st-config-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .st-config-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .st-label {
+        display: block;
+        font-size: 12px;
+        color: #8f98a0;
+        margin-bottom: 6px;
+        margin-top: 15px;
+    }
+
+    .st-required {
+        color: #d9534f;
+        margin-left: 4px;
+        font-weight: bold;
+    }
+
+    /* 输入框样式 & 隐藏数字箭头 */
+    .st-input {
+        width: 100%;
+        background: #171a21;
+        border: 1px solid #30455a;
+        color: #c7d5e0;
+        padding: 10px;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+        -moz-appearance: textfield;
+    }
+
+    .st-input::-webkit-outer-spin-button,
+    .st-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .st-input:focus {
+        border-color: var(--steam-blue);
+    }
+
+    .st-input-group {
+        position: relative;
+        width: 100%;
+    }
+
+    .st-input-group .st-input {
+        padding-right: 35px;
+    }
+
+    /* --- 清除按钮样式 --- */
+    .st-clear-btn {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #6a7480;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 14px;
+        line-height: 1;
+        transition: color 0.2s;
+        display: block;
+    }
+
+    .st-clear-btn.hidden {
+        display: none !important;
+    }
+
+    .st-clear-btn:hover {
+        color: #fff;
+    }
+
+    .st-row {
+        display: flex;
+        gap: 15px;
+    }
+
+    .st-col {
+        flex: 1;
+    }
+
+    .st-btn-submit {
+        width: 100%;
+        margin-top: 25px;
+        padding: 12px;
+        background: linear-gradient(to right, #47bfff, #1a9fff);
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        transition: filter 0.2s;
+    }
+
+    .st-btn-submit:hover {
+        filter: brightness(1.1);
+    }
+
+    .st-btn-submit:active {
+        transform: scale(0.98);
+    }
+
+    .st-error {
+        color: #d9534f;
+        font-size: 12px;
+        margin-top: 10px;
+        text-align: center;
+        height: 20px;
+        line-height: 20px;
+        visibility: hidden;
+    }
+
+    .st-error.visible {
+        visibility: visible;
+    }
+
+    .st-footer {
+        text-align: center;
+        font-size: 12px;
+        color: #4a5e73;
+        margin-bottom: 15px;
+        margin-top: auto;
+        font-weight: 500;
+        letter-spacing: 1px;
+    }
+
+    /* === 加载动画 === */
+    .steam-loading {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        color: var(--steam-blue);
+        font-size: 14px;
+    }
+
+    .st-loading-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    /* === 生成后的内容布局 === */
+    .st-content-wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* --- 头部样式 --- */
+    .st-header {
+        display: flex;
+        align-items: center;
+        height: 110px;
+        padding: 0 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        flex-shrink: 0;
+        box-sizing: border-box;
+    }
+
+    .st-config-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: #6a7480;
+        cursor: pointer;
+        padding: 8px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .st-config-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+
+    .st-config-btn i {
+        display: inline-block;
+        transition: transform 0.3s ease;
+    }
+
+    .st-config-btn:hover i {
+        transform: rotate(90deg);
+    }
+
+    .st-avatar-container {
+        margin-right: 15px;
+        display: block;
+        flex-shrink: 0;
+    }
+
+    .st-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        transition: border-color 0.3s, transform 0.2s;
+    }
+
+    .st-avatar-container:hover .st-avatar {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px rgba(102, 192, 244, 0.4);
+        animation: st-avatar-spin 4s linear infinite;
+        /* 4秒转一圈，匀速，无限循环 */
+        animation-delay: 3s;
+        /* 延迟 3 秒后才开始旋转 */
+    }
+
+    .st-avatar.online {
+        border-color: var(--steam-blue);
+    }
+
+    .st-avatar.away {
+        border-color: var(--steam-blue);
+        border-style: dashed;
+    }
+
+    .st-avatar.ingame {
+        border-color: var(--steam-ingame);
+    }
+
+    .st-avatar.offline {
+        border-color: var(--steam-offline);
+    }
+
+    @keyframes st-avatar-spin {
+        0% {
+            transform: scale(1.05) rotate(0deg);
+        }
+
+        100% {
+            transform: scale(1.05) rotate(360deg);
+        }
+    }
+
+    .st-user-info {
+        flex: 1;
+        min-width: 0;
+        padding-right: 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .st-profile-link {
+        display: inline-block;
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .st-profile-link:hover .st-user-name {
+        color: #fff;
+        text-decoration: underline !important;
+    }
+
+    .st-user-name {
+        font-size: 18px;
+        color: #eee;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+        margin-bottom: 5px;
+    }
+
+    .st-status {
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1.4;
+        margin-top: 0;
+    }
+
+    .st-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .st-status.online .st-status-dot,
+    .st-status.away .st-status-dot {
+        background-color: var(--steam-blue);
+    }
+
+    .st-status.ingame .st-status-dot {
+        background-color: var(--steam-ingame);
+    }
+
+    .st-status.offline .st-status-dot {
+        background-color: var(--steam-offline);
+    }
+
+    .st-playing-now {
+        font-size: 13px;
+        color: var(--steam-ingame);
+        margin-top: 5px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+    }
+
+    /* Tabs */
+    .st-tabs {
+        display: flex;
+        background: rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+        height: 45px;
+    }
+
+    .st-tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8f98a0;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+    }
+
+    .st-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+
+    .st-tab-btn.active {
+        color: #fff;
+        border-bottom: 2px solid var(--steam-blue);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* --- 游戏列表 --- */
+    .st-games-list {
+        flex: 1;
+        min-height: 0;
+        padding: 12px 15px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    /* 滚动条 */
+    .st-games-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .st-games-list::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+
+    .st-games-list::-webkit-scrollbar-thumb {
+        background: #4a5e73;
+        border-radius: 3px;
+    }
+
+    .st-games-list::-webkit-scrollbar-thumb:hover {
+        background: #5e7894;
+    }
+
+    .st-games-list-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .steam-widget a.st-game-item {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 6px;
+        padding: 8px;
+        height: 66px;
+        box-sizing: border-box;
+        transition: transform 0.2s, background 0.2s;
+        text-decoration: none;
+        color: inherit;
+        flex-shrink: 0;
+    }
+
+    .steam-widget a.st-game-item:hover {
+        transform: translateX(5px);
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .st-game-img {
+        width: 100px;
+        height: 46px;
+        border-radius: 4px;
+        margin-right: 12px;
+        flex-shrink: 0;
+        background-color: #23262e;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .st-game-details {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .st-game-name {
+        font-size: 14px;
+        color: #e1e1e1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+        margin-bottom: 3px;
+    }
+
+    .st-game-hours {
+        font-size: 12px;
+        color: #8f98a0;
+    }
+
+    .st-game-list-placeholder {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #6a7480;
+        font-size: 13px;
+        padding: 20px;
+        min-height: 62px;
+    }
+</style>
+
+<script>
+    window.loadSteamWidget = async function () {
+        const idInput = document.getElementById('st-input-id');
+        const apiInput = document.getElementById('st-input-api');
+        const numInput = document.getElementById('st-input-num');
+        const num2Input = document.getElementById('st-input-num2');
+        const form = document.getElementById('st-config-form');
+        const loading = document.getElementById('st-loading');
+        const content = document.getElementById('st-content');
+        const errorMsg = document.getElementById('st-error-msg');
+
+        const steamId = idInput.value.trim();
+        const apiKey = apiInput.value.trim();
+        let rawNum = parseInt(numInput.value) || 10;
+        let rawNum2 = parseInt(num2Input.value) || 5;
+
+        const num = Math.min(Math.max(rawNum, 1), 100);
+        const num2 = Math.min(Math.max(rawNum2, 1), 20);
+
+        if (!steamId) {
+            errorMsg.innerText = "请输入 Steam ID";
+            errorMsg.classList.add('visible');
+            return;
+        }
+        if (!/^\d{17}$/.test(steamId)) {
+            errorMsg.innerText = "Steam ID应为17位纯数字";
+            errorMsg.classList.add('visible');
+            return;
+        }
+        if (apiKey && !/^[a-zA-Z0-9]{32}$/.test(apiKey)) {
+            errorMsg.innerText = "Steam API Key应为32位数字和字母";
+            errorMsg.classList.add('visible');
+            return;
+        }
+
+        form.classList.add('hidden');
+        loading.classList.remove('hidden');
+        content.classList.add('hidden');
+        errorMsg.classList.remove('visible');
+
+        let apiUrl = `https://api.qhzy.top/steam-widget?id=${steamId}&num=${num}&num2=${num2}`;
+        if (apiKey) {
+            apiUrl += `&apikey=${apiKey}`;
+        }
+        const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%271%27 height=%271%27 viewBox=%270 0 1 1%27%3E%3Crect width=%271%27 height=%271%27 fill=%27%231b2838%27/%3E%3C/svg%3E";
+
+        function optimizeSteamImage(url) {
+            if (!url) return '';
+            return url.replace('steamcdn-a.akamaihd.net', 'cdn.cloudflare.steamstatic.com');
+        }
+
+        function generateListHtml(games, type, minItems = 5) {
+            if (games) {
+                games = games.filter(g => parseFloat(g.playtime) > 0);
+            }
+            if (!games || games.length === 0) {
+                const message = type === 'recent' ? '近两周无游戏记录' : '无游戏记录';
+                return `<div class="st-game-list-placeholder">${message}</div>`;
+            }
+            let listContent = games.map(g => {
+                const optimizedUrl = optimizeSteamImage(g.image);
+                return `
+                <a href="https://store.steampowered.com/app/${g.appid}" target="_blank" class="st-game-item">
+                    <div class="st-game-img" role="img" aria-label="${g.name}" style="background-image: url('${optimizedUrl}'), url('${PLACEHOLDER_IMG}');"></div>
+                    <div class="st-game-details">
+                        <div class="st-game-name">${g.name}</div>
+                        <div class="st-game-hours">${g.playtime} 小时</div>
+                    </div>
+                </a>
+                `;
+            }).join('');
+
+            if (games.length < minItems) {
+                listContent += `<div class="st-game-list-placeholder">没有更多游戏了</div>`;
+            }
+            return listContent;
+        }
+
+        try {
+            const res = await fetch(apiUrl);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+
+            const u = data.user;
+            let statusClass = 'offline';
+            let statusText = '离线';
+            if (u.gameName) { statusClass = 'ingame'; statusText = '游戏中'; }
+            else if (u.status === 3 || u.status === 4) { statusClass = 'away'; statusText = '离开'; }
+            else if (u.status >= 1) { statusClass = 'online'; statusText = '在线'; }
+
+            content.innerHTML = `
+            <div class="st-header">
+                <button class="st-config-btn" onclick="resetSteamWidget()" title="重新生成">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                <a href="${u.profileUrl}" target="_blank" class="st-avatar-container">
+                    <img src="${u.avatar}" class="st-avatar ${statusClass}" alt="Avatar">
+                </a>
+                <div class="st-user-info">
+                    <a href="${u.profileUrl}" target="_blank" class="st-profile-link"><div class="st-user-name">${u.name}</div></a>
+                    <div class="st-status ${statusClass}"><div class="st-status-dot"></div><span>${statusText}</span></div>
+                    ${u.gameName ? `<div class="st-playing-now">正在游玩: ${u.gameName}</div>` : ''}
+                </div>
+            </div>
+            <div class="st-tabs">
+                <button class="st-tab-btn active" onclick="switchSteamTab(this, 'top')">总时长排行</button>
+                <button class="st-tab-btn" onclick="switchSteamTab(this, 'recent')">近两周游玩</button>
+            </div>
+            <div class="st-games-list" id="st-list-top">
+                <div class="st-games-list-inner">
+                    ${generateListHtml(data.topGames, 'top')}
+                </div>
+            </div>
+            <div class="st-games-list hidden" id="st-list-recent">
+                <div class="st-games-list-inner">
+                    ${generateListHtml(data.recentGames, 'recent')}
+                </div>
+            </div>
+            `;
+
+            loading.classList.add('hidden');
+            content.classList.remove('hidden');
+
+        } catch (e) {
+            loading.classList.add('hidden');
+            content.classList.add('hidden');
+            form.classList.remove('hidden');
+            if (apiKey) {
+                errorMsg.innerText = "获取失败，请检查 Steam ID 和 Steam API Key 是否正确";
+            } else {
+                errorMsg.innerText = "获取失败，请检查 Steam ID 是否正确";
+            }
+            errorMsg.classList.add('visible');
+            console.error("Failed to fetch Steam data:", e);
+        }
+    };
+
+    // --- 清除按钮逻辑 ---
+    window.toggleClearBtn = function (input, btnId) {
+        const btn = document.getElementById(btnId);
+        if (input.value.trim().length > 0) {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+    }
+
+    // --- 通用清除输入内容 ---
+    window.clearInput = function (inputId, btnId) {
+        const input = document.getElementById(inputId);
+        input.value = '';
+        input.focus();
+        toggleClearBtn(input, btnId); // 隐藏按钮
+    }
+
+    window.resetSteamWidget = function () {
+        document.getElementById('st-content').classList.add('hidden');
+        document.getElementById('st-config-form').classList.remove('hidden');
+        const errorMsg = document.getElementById('st-error-msg');
+        errorMsg.innerText = "";
+        errorMsg.classList.remove('visible');
+        toggleClearBtn(document.getElementById('st-input-id'), 'st-clear-btn-id');
+        toggleClearBtn(document.getElementById('st-input-api'), 'st-clear-btn-api');
+    };
+
+    window.switchSteamTab = function (btn, type) {
+        const currentWidget = btn.closest('.steam-widget');
+        if (!currentWidget) return;
+        const topList = currentWidget.querySelector('#st-list-top');
+        const recentList = currentWidget.querySelector('#st-list-recent');
+        const buttons = currentWidget.querySelectorAll('.st-tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (type === 'top') {
+            topList.classList.remove('hidden');
+            recentList.classList.add('hidden');
+        } else {
+            topList.classList.add('hidden');
+            recentList.classList.remove('hidden');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 检查 ID 输入框
+        const idInput = document.getElementById('st-input-id');
+        if (idInput && idInput.value.trim()) {
+            toggleClearBtn(idInput, 'st-clear-btn-id');
+        }
+    });
+</script>
+<!-- Steam 小组件结束 -->
