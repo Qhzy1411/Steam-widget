@@ -54,6 +54,10 @@ git clone https://github.com/Qhzy1411/Steam-widget.git
 # 进入后端目录
 cd .\Steam-widget\back
 
+创建.env文件并填写正确的PORT、STEAM_API_KEY及STEAM_ID数据
+
 # 安装依赖 & 运行
 npm install
 npm start
+
+随后在前端配置自己的apiurl及各项参数即可
