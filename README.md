@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Website](https://img.shields.io/badge/Website-芷岸听荷-blue?style=flat-square&logo=google-chrome)](https://qhzy.top) [![Steam](https://img.shields.io/badge/Steam-Profile-1b2838?style=flat-square&logo=steam)](https://store.steampowered.com/) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
+[![Website](https://img.shields.io/badge/Website-芷岸听荷-blue?style=flat-square&logo=google-chrome)](https://qhzy.top/tools/steam_wiget/) [![Steam](https://img.shields.io/badge/Steam-Profile-1b2838?style=flat-square&logo=steam)](https://store.steampowered.com/) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](./LICENSE)
 
 **一套美观、响应式且可定制的 Steam 状态展示组件。**\
 适用于个人博客、侧边栏或任何网页项目。\
@@ -27,6 +27,7 @@
 
 ## 🖼️ 前端组件预览 (front)
 
+具体预览可前往我的个人博客页面 https://qhzy.top/tools/steam_wiget/
 ### 1. 标准展示版 (default.html)
 最常用的版本，适合在“关于我”页面展示。\
 <img width="483" height="696" alt="PixPin_2025-12-20_20-14-17" src="https://github.com/user-attachments/assets/cc5e38f3-7686-47f1-95ad-e143a75e7613" />
