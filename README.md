@@ -25,7 +25,7 @@
 
 ---
 
-## 🖼️ 前端组件预览 (front)
+## 🖼️ 前端组件预览 (client)
 
 具体预览可前往我的个人博客页面 https://qhzy.top/tools/steam_wiget/
 ### 1. 标准展示版 (default.html)
@@ -44,7 +44,7 @@
 
 ## 🚀 快速开始
 
-### 后端 (back)
+### 后端 (server)
 
 本项目依赖后端 API 获取 Steam 数据以解决跨域问题。
 
@@ -53,7 +53,7 @@
 git clone https://github.com/Qhzy1411/Steam-widget.git
 
 # 进入后端目录
-cd .\Steam-widget\back
+cd /Steam-widget/server
 
 创建.env文件并填写正确的PORT、STEAM_API_KEY及STEAM_ID数据
 
